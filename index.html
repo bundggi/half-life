@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Inter Font -->
+    <!-- Inter & Noto Sans KR Font -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
@@ -52,27 +52,41 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold text-slate-100 leading-tight">방사성 동위원소 반감기 시뮬레이터</h1>
-                    <p class="text-xs text-slate-400">암석의 절대 연령 측정 원리 탐구</p>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="text-slate-400">암석의 절대 연령 측정 원리 탐구</span>
+                        <span class="text-slate-600">|</span>
+                        <!-- Firebase Cloud Sync Status Badge -->
+                        <span id="cloud-status-badge" class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] bg-slate-800 text-slate-400 border border-slate-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            <span>클라우드 연결 중...</span>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <!-- Tab Navigation Buttons -->
             <nav class="flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-sm font-medium">
-                <button id="tab-sim-btn" onclick="switchTab('sim')" class="px-4 py-1.5 rounded-lg text-amber-400 bg-slate-800 shadow transition-all flex items-center space-x-2">
+                <button id="tab-sim-btn" onclick="switchTab('sim')" class="px-3.5 sm:px-4 py-1.5 rounded-lg text-amber-400 bg-slate-800 shadow transition-all flex items-center space-x-2">
                     <i class="fa-solid fa-flask"></i>
                     <span class="hidden sm:inline">붕괴 시뮬레이션</span>
                 </button>
-                <button id="tab-calc-btn" onclick="switchTab('calc')" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2">
+                <button id="tab-calc-btn" onclick="switchTab('calc')" class="px-3.5 sm:px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2">
                     <i class="fa-solid fa-mountain text-emerald-400"></i>
                     <span class="hidden sm:inline">암석 절대연령 측정</span>
                 </button>
-                <button id="tab-quiz-btn" onclick="switchTab('quiz')" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2">
+                <button id="tab-quiz-btn" onclick="switchTab('quiz')" class="px-3.5 sm:px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2">
                     <i class="fa-solid fa-graduation-cap text-indigo-400"></i>
                     <span class="hidden sm:inline">개념 & 퀴즈</span>
                 </button>
             </nav>
         </div>
     </header>
+
+    <!-- Notification Toast Element -->
+    <div id="toast-message" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 border border-slate-700 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium text-slate-200">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-amber-400 text-base"></i>
+        <span id="toast-text">알림 메시지</span>
+    </div>
 
     <!-- Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
@@ -244,7 +258,6 @@
             </div>
         </section>
 
-
         <!-- SECTION 2: ROCK AGE DATING CALCULATOR TAB -->
         <section id="section-calc" class="space-y-6 hidden">
             <div class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-800/40 rounded-2xl p-6 shadow-xl">
@@ -307,27 +320,43 @@
                                 샘플 C (3반감기, 모 12.5%)
                             </button>
                             <button onclick="setCalcRandomPreset()" class="bg-emerald-950/60 hover:bg-emerald-900/60 text-xs text-emerald-300 border border-emerald-700/50 py-2 px-3 rounded-lg transition font-medium">
-                                <i class="fa-solid fa-dice mr-1"></i> 랜덤 비율 암석 채취
+                                <i class="fa-solid fa-dice mr-1"></i> 랜덤 비율 채취
                             </button>
                         </div>
                     </div>
 
                     <!-- Calculated Result Box -->
-                    <div class="bg-slate-950 border border-emerald-500/40 p-5 rounded-2xl space-y-3">
-                        <div class="text-xs text-slate-400 font-medium uppercase tracking-wider">추정 계산된 암석의 절대 연령</div>
-                        <div class="flex items-baseline space-x-2">
-                            <span id="calc-result-age" class="text-3xl font-extrabold text-emerald-400 font-mono">90.00억 년</span>
-                            <span id="calc-result-hl" class="text-xs text-slate-400 font-mono">(2.00 반감기 경과)</span>
+                    <div class="bg-slate-950 border border-emerald-500/40 p-5 rounded-2xl space-y-4">
+                        <div>
+                            <div class="text-xs text-slate-400 font-medium uppercase tracking-wider">추정 계산된 암석의 절대 연령</div>
+                            <div class="flex items-baseline space-x-2 mt-1">
+                                <span id="calc-result-age" class="text-3xl font-extrabold text-emerald-400 font-mono">90.00억 년</span>
+                                <span id="calc-result-hl" class="text-xs text-slate-400 font-mono">(2.00 반감기 경과)</span>
+                            </div>
                         </div>
                         <p id="calc-geology-era" class="text-xs text-slate-300 border-t border-slate-800 pt-2.5">
                             지질 시대: 선캄브리아 시대 (약 90억 년 전 생성)
                         </p>
+
+                        <!-- Firebase Cloud Save Form -->
+                        <div class="border-t border-slate-800 pt-3 space-y-2">
+                            <label class="block text-xs font-semibold text-emerald-400">
+                                <i class="fa-solid fa-cloud-arrow-up mr-1"></i> 분석 결과 클라우드 저장
+                            </label>
+                            <div class="flex space-x-2">
+                                <input type="text" id="rock-sample-name-input" placeholder="샘플 이름 (예: 한탄강 현무암)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500">
+                                <button onclick="window.saveCurrentRockSample()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex items-center space-x-1 whitespace-nowrap shadow-lg shadow-emerald-900/30">
+                                    <i class="fa-solid fa-floppy-disk"></i>
+                                    <span>저장</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
 
                 <!-- Graphic & Calculation Visualizer -->
-                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl space-y-6">
                     <div>
                         <h3 class="text-sm font-bold text-slate-200 mb-2 flex items-center space-x-2">
                             <i class="fa-solid fa-square-root-variable text-emerald-400"></i>
@@ -336,37 +365,57 @@
                         <p class="text-xs text-slate-400 mb-4">
                             $N(t) = N_0 \cdot \left(\frac{1}{2}\right)^{\frac{t}{T}}$ 식을 이용하여 반감기 횟수 $n$과 실제 나이 $t$를 산출합니다.
                         </p>
-                    </div>
 
-                    <!-- Math Steps Box -->
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs space-y-2 text-slate-300">
-                        <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
-                            <span class="text-slate-400">1. 모원소 잔존 비율 N(t)/N0:</span>
-                            <span id="math-step-1" class="text-amber-400 font-bold">0.25 (25%)</span>
-                        </div>
-                        <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
-                            <span class="text-slate-400">2. 경과한 반감기 횟수 n = -log2(N/N0):</span>
-                            <span id="math-step-2" class="text-amber-400 font-bold">2.00 회</span>
-                        </div>
-                        <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
-                            <span class="text-slate-400">3. 대상 동위원소 반감기 T:</span>
-                            <span id="math-step-3" class="text-emerald-400 font-bold">45억 년</span>
-                        </div>
-                        <div class="flex justify-between pt-1">
-                            <span class="text-slate-200 font-bold">4. 암석의 절대 연령 t = n × T:</span>
-                            <span id="math-step-4" class="text-emerald-400 font-extrabold text-sm">90.00억 년</span>
+                        <!-- Math Steps Box -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs space-y-2 text-slate-300">
+                            <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                                <span class="text-slate-400">1. 모원소 잔존 비율 N(t)/N0:</span>
+                                <span id="math-step-1" class="text-amber-400 font-bold">0.25 (25%)</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                                <span class="text-slate-400">2. 경과한 반감기 횟수 n = -log2(N/N0):</span>
+                                <span id="math-step-2" class="text-amber-400 font-bold">2.00 회</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                                <span class="text-slate-400">3. 대상 동위원소 반감기 T:</span>
+                                <span id="math-step-3" class="text-emerald-400 font-bold">45억 년</span>
+                            </div>
+                            <div class="flex justify-between pt-1">
+                                <span class="text-slate-200 font-bold">4. 암석의 절대 연령 t = n × T:</span>
+                                <span id="math-step-4" class="text-emerald-400 font-extrabold text-sm">90.00억 년</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Graph visualization container for calc mode -->
-                    <div class="relative w-full h-[220px] mt-4">
+                    <div class="relative w-full h-[200px]">
                         <canvas id="calc-decay-chart"></canvas>
                     </div>
                 </div>
 
             </div>
-        </section>
 
+            <!-- Cloud Saved Rocks Container -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-database text-emerald-400"></i>
+                        <span>실시간 클라우드 공유 암석 기록소</span>
+                    </h3>
+                    <span id="cloud-sample-count" class="text-xs font-mono text-emerald-400 font-bold bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                        저장된 기록 0개
+                    </span>
+                </div>
+
+                <!-- Samples List Grid -->
+                <div id="cloud-samples-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto custom-scrollbar p-1">
+                    <div class="col-span-full py-8 text-center text-xs text-slate-500">
+                        <i class="fa-solid fa-spinner animate-spin text-lg mb-2 block"></i>
+                        클라우드 데이터를 불러오는 중...
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- SECTION 3: CONCEPT & INTERACTIVE QUIZ TAB -->
         <section id="section-quiz" class="space-y-6 hidden">
@@ -426,7 +475,7 @@
                 <div id="quiz-card" class="bg-slate-950 border border-slate-800 p-6 rounded-2xl space-y-5">
                     <div class="flex items-center space-x-2">
                         <span id="quiz-badge" class="px-2.5 py-1 bg-indigo-950 text-indigo-300 border border-indigo-800 text-xs rounded-md font-mono font-bold">
-                            문제 1
+                            문제
                         </span>
                         <span id="quiz-isotope-info" class="text-xs text-slate-400 font-medium">동위원소: 탄소-14 (반감기 5,730년)</span>
                     </div>
@@ -458,633 +507,59 @@
         </div>
     </footer>
 
-    <script>
-        // Isotope Preset Database
-        const ISOTOPES = {
-            C14: { name: '탄소-14', daughter: '질소-14', halfLifeYears: 5730, unit: '년', code: 'C-14 → N-14' },
-            U235: { name: '우라늄-235', daughter: '납-207', halfLifeYears: 700000000, unit: '억 년', code: 'U-235 → Pb-207' },
-            U238: { name: '우라늄-238', daughter: '납-206', halfLifeYears: 4500000000, unit: '억 년', code: 'U-238 → Pb-206' },
-            K40: { name: '칼륨-40', daughter: '아르곤-40', halfLifeYears: 1250000000, unit: '억 년', code: 'K-40 → Ar-40' },
-            Rb87: { name: '루비듐-87', daughter: '스트론튬-87', halfLifeYears: 48800000000, unit: '억 년', code: 'Rb-87 → Sr-87' },
-            CUSTOM: { name: '커스텀 원소', daughter: '자원소', halfLifeYears: 1000, unit: '년', code: 'Parent → Daughter' }
+    <!-- Firebase Modular SDK Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            addDoc, 
+            deleteDoc, 
+            onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global environment variables or user provided Firebase configuration
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyCx3bwAcY1MRSZVFDBZBq7jMgnnWqbLae8",
+            authDomain: "half-life-18dbb.firebaseapp.com",
+            projectId: "half-life-18dbb",
+            storageBucket: "half-life-18dbb.firebasestorage.app",
+            messagingSenderId: "593656618970",
+            appId: "1:593656618970:web:f5da46d21fdac6e6f0eae3"
         };
 
-        // State variables
-        let currentIsotopeKey = 'C14';
-        let currentHalfLifeYears = ISOTOPES.C14.halfLifeYears;
-        let totalAtoms = 100;
-        let atoms = []; // array of objects: { isParent: boolean }
-        let currentHalfLivesPassed = 0;
-        let isPlaying = false;
-        let playInterval = null;
-        let decayMode = 'probabilistic'; // 'probabilistic' or 'exact'
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'half-life-18dbb';
 
-        // Chart.js instances
-        let decayChart = null;
-        let calcChart = null;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // Canvas context
-        let canvas = null;
-        let ctx = null;
+        let currentUser = null;
 
-        window.onload = function() {
-            canvas = document.getElementById('atom-canvas');
-            ctx = canvas.getContext('2d');
+        // Toast Notification Function
+        window.showToast = function(msg, isError = false) {
+            const toast = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+            const text = document.getElementById('toast-text');
 
-            // Initialize simulation data before rendering canvas
-            resetSimulation();
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            initDecayChart();
-            initCalcChart();
-            updateCalcResults();
-            generateNewQuiz();
-        };
-
-        function resizeCanvas() {
-            if (!canvas) return;
-            const parent = canvas.parentElement;
-            canvas.width = parent.clientWidth * window.devicePixelRatio || 300;
-            canvas.height = parent.clientHeight * window.devicePixelRatio || 300;
-            drawAtoms();
-        }
-
-        function switchTab(tab) {
-            document.getElementById('section-sim').classList.add('hidden');
-            document.getElementById('section-calc').classList.add('hidden');
-            document.getElementById('section-quiz').classList.add('hidden');
-
-            document.getElementById('tab-sim-btn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2";
-            document.getElementById('tab-calc-btn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2";
-            document.getElementById('tab-quiz-btn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2";
-
-            if (tab === 'sim') {
-                document.getElementById('section-sim').classList.remove('hidden');
-                document.getElementById('tab-sim-btn').className = "px-4 py-1.5 rounded-lg text-amber-400 bg-slate-800 shadow transition-all flex items-center space-x-2 font-bold";
-                resizeCanvas();
-            } else if (tab === 'calc') {
-                document.getElementById('section-calc').classList.remove('hidden');
-                document.getElementById('tab-calc-btn').className = "px-4 py-1.5 rounded-lg text-emerald-400 bg-slate-800 shadow transition-all flex items-center space-x-2 font-bold";
-                if (calcChart) calcChart.update();
-            } else if (tab === 'quiz') {
-                document.getElementById('section-quiz').classList.remove('hidden');
-                document.getElementById('tab-quiz-btn').className = "px-4 py-1.5 rounded-lg text-indigo-400 bg-slate-800 shadow transition-all flex items-center space-x-2 font-bold";
-            }
-        }
-
-        function onIsotopeChange() {
-            const select = document.getElementById('isotope-select');
-            currentIsotopeKey = select.value;
-
-            const customBox = document.getElementById('custom-half-life-box');
-            if (currentIsotopeKey === 'CUSTOM') {
-                customBox.classList.remove('hidden');
-                currentHalfLifeYears = parseFloat(document.getElementById('custom-half-life-input').value) || 1000;
+            text.innerText = msg;
+            if (isError) {
+                icon.className = "fa-solid fa-circle-exclamation text-red-400 text-base";
             } else {
-                customBox.classList.add('hidden');
-                currentHalfLifeYears = ISOTOPES[currentIsotopeKey].halfLifeYears;
+                icon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
             }
 
-            const iso = ISOTOPES[currentIsotopeKey];
-            document.getElementById('parent-name').innerText = iso.name;
-            document.getElementById('daughter-name').innerText = iso.daughter;
-
-            resetSimulation();
-        }
-
-        function onCustomHalfLifeChange() {
-            currentHalfLifeYears = parseFloat(document.getElementById('custom-half-life-input').value) || 1000;
-            resetSimulation();
-        }
-
-        function resetSimulation() {
-            stopPlay();
-            totalAtoms = parseInt(document.getElementById('particle-count-select').value);
-            decayMode = document.getElementById('decay-mode-select').value;
-            currentHalfLivesPassed = 0;
-
-            document.getElementById('half-life-slider').value = 0;
-            document.getElementById('slider-val-text').innerText = "0.0회";
-
-            // Initialize all atoms as parent
-            atoms = [];
-            for (let i = 0; i < totalAtoms; i++) {
-                atoms.push({ isParent: true });
-            }
-
-            updateDisplays();
-            drawAtoms();
-            updateChartHighlight();
-        }
-
-        function drawAtoms() {
-            // Ensure canvas, context, and atoms array are initialized
-            if (!ctx || !canvas || !atoms || atoms.length < totalAtoms) return;
-
-            const width = canvas.width;
-            const height = canvas.height;
-            ctx.clearRect(0, 0, width, height);
-
-            const gridDim = Math.sqrt(totalAtoms);
-            const padding = width * 0.08;
-            const availableSize = width - padding * 2;
-            const cellSize = availableSize / gridDim;
-            const radius = Math.max(2, cellSize * 0.36);
-
-            for (let i = 0; i < totalAtoms; i++) {
-                const row = Math.floor(i / gridDim);
-                const col = i % gridDim;
-
-                const x = padding + col * cellSize + cellSize / 2;
-                const y = padding + row * cellSize + cellSize / 2;
-
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-
-                if (atoms[i].isParent) {
-                    ctx.fillStyle = '#ef4444'; // Red
-                    ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
-                    ctx.shadowBlur = 4;
-                } else {
-                    ctx.fillStyle = '#3b82f6'; // Blue
-                    ctx.shadowColor = 'rgba(59, 130, 246, 0.6)';
-                    ctx.shadowBlur = 4;
-                }
-                ctx.fill();
-                ctx.shadowBlur = 0; // reset
-            }
-        }
-
-        function togglePlay() {
-            if (isPlaying) {
-                stopPlay();
-            } else {
-                startPlay();
-            }
-        }
-
-        function startPlay() {
-            isPlaying = true;
-            document.getElementById('play-icon').className = "fa-solid fa-pause";
-            document.getElementById('play-text').innerText = "일시정지";
-
-            playInterval = setInterval(() => {
-                if (currentHalfLivesPassed >= 6.0) {
-                    stopPlay();
-                    return;
-                }
-                advanceTime(0.05);
-            }, 100);
-        }
-
-        function stopPlay() {
-            isPlaying = false;
-            if (playInterval) clearInterval(playInterval);
-            document.getElementById('play-icon').className = "fa-solid fa-play";
-            document.getElementById('play-text').innerText = "시작";
-        }
-
-        function stepHalfLife(amount) {
-            stopPlay();
-            advanceTime(amount);
-        }
-
-        function onSliderInput(val) {
-            stopPlay();
-            const targetHL = parseFloat(val);
-            currentHalfLivesPassed = targetHL;
-            applyHalfLivesState(currentHalfLivesPassed);
-        }
-
-        function advanceTime(deltaHL) {
-            currentHalfLivesPassed = Math.min(6.0, currentHalfLivesPassed + deltaHL);
-            document.getElementById('half-life-slider').value = currentHalfLivesPassed;
-            applyHalfLivesState(currentHalfLivesPassed);
-        }
-
-        function applyHalfLivesState(hl) {
-            document.getElementById('slider-val-text').innerText = hl.toFixed(1) + "회";
-
-            if (decayMode === 'exact') {
-                // Smooth exact mathematical ratio
-                const parentRatio = Math.pow(0.5, hl);
-                const targetParentCount = Math.round(totalAtoms * parentRatio);
-
-                for (let i = 0; i < totalAtoms; i++) {
-                    atoms[i].isParent = i < targetParentCount;
-                }
-            } else {
-                // Probabilistic model
-                // For a given jump or target, calculate remaining parents probabilistically
-                const pDecayPerStep = 1 - Math.pow(0.5, 0.05); 
-                const stepsNeeded = Math.round(hl / 0.05);
-
-                // Re-seed or simulate to current time
-                let parentCount = Math.round(totalAtoms * Math.pow(0.5, hl));
-                
-                // Shuffle array slightly for dynamic stochastic visual feel
-                let activeParents = atoms.filter(a => a.isParent).length;
-                
-                if (activeParents > parentCount) {
-                    let toTurn = activeParents - parentCount;
-                    for (let i = 0; i < totalAtoms && toTurn > 0; i++) {
-                        if (atoms[i].isParent && Math.random() < 0.3) {
-                            atoms[i].isParent = false;
-                            toTurn--;
-                        }
-                    }
-                    // catch remaining
-                    for (let i = 0; i < totalAtoms && toTurn > 0; i++) {
-                        if (atoms[i].isParent) {
-                            atoms[i].isParent = false;
-                            toTurn--;
-                        }
-                    }
-                } else if (activeParents < parentCount) {
-                    let toRestore = parentCount - activeParents;
-                    for (let i = 0; i < totalAtoms && toRestore > 0; i++) {
-                        if (!atoms[i].isParent) {
-                            atoms[i].isParent = true;
-                            toRestore--;
-                        }
-                    }
-                }
-            }
-
-            updateDisplays();
-            drawAtoms();
-            updateChartHighlight();
-        }
-
-        function updateDisplays() {
-            const parentCount = atoms.filter(a => a.isParent).length;
-            const daughterCount = totalAtoms - parentCount;
-
-            const parentPct = ((parentCount / totalAtoms) * 100).toFixed(1);
-            const daughterPct = ((daughterCount / totalAtoms) * 100).toFixed(1);
-
-            document.getElementById('parent-count-text').innerText = `${parentCount} (${parentPct}%)`;
-            document.getElementById('daughter-count-text').innerText = `${daughterCount} (${daughterPct}%)`;
-
-            // Formatting years nicely
-            const years = currentHalfLivesPassed * currentHalfLifeYears;
-            let formattedYears = "";
-            if (years >= 1e8) {
-                formattedYears = (years / 1e8).toFixed(2) + "억 년";
-            } else if (years >= 1e4) {
-                formattedYears = Math.round(years).toLocaleString('ko-KR') + " 년";
-            } else {
-                formattedYears = years.toFixed(0) + " 년";
-            }
-
-            document.getElementById('time-display').innerText = `${formattedYears} (${currentHalfLivesPassed.toFixed(1)} 반감기)`;
-        }
-
-        function initDecayChart() {
-            const ctxChart = document.getElementById('decay-chart').getContext('2d');
-
-            // Generate fine-grained points for smooth curve
-            const points = 100;
-            const parentData = [];
-            const daughterData = [];
-
-            for (let i = 0; i <= points; i++) {
-                const hl = (i / points) * 6;
-                const parentRatio = Math.pow(0.5, hl) * 100;
-                parentData.push({ x: hl, y: parentRatio });
-                daughterData.push({ x: hl, y: 100 - parentRatio });
-            }
-
-            decayChart = new Chart(ctxChart, {
-                type: 'line',
-                data: {
-                    datasets: [
-                        {
-                            label: '모원소 (%)',
-                            data: parentData,
-                            borderColor: '#ef4444',
-                            borderWidth: 3,
-                            pointRadius: 0,
-                            tension: 0.3
-                        },
-                        {
-                            label: '자원소 (%)',
-                            data: daughterData,
-                            borderColor: '#3b82f6',
-                            borderWidth: 3,
-                            pointRadius: 0,
-                            tension: 0.3
-                        },
-                        {
-                            label: '현재 지점',
-                            data: [{ x: 0, y: 100 }],
-                            borderColor: '#f59e0b',
-                            backgroundColor: '#f59e0b',
-                            pointRadius: 7,
-                            pointHoverRadius: 9,
-                            showLine: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            min: 0,
-                            max: 6,
-                            title: {
-                                display: true,
-                                text: '경과한 반감기 횟수 (회)',
-                                color: '#94a3b8',
-                                font: { size: 12, weight: 'bold' }
-                            },
-                            ticks: {
-                                color: '#94a3b8',
-                                stepSize: 1,
-                                callback: function(val) { return val + 'T'; }
-                            },
-                            grid: { color: '#334155' }
-                        },
-                        y: {
-                            min: 0,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: '비율 (%)',
-                                color: '#94a3b8',
-                                font: { size: 12, weight: 'bold' }
-                            },
-                            ticks: {
-                                color: '#94a3b8',
-                                stepSize: 25,
-                                callback: function(val) { return val + '%'; }
-                            },
-                            grid: { color: '#334155' }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}% (${context.parsed.x.toFixed(2)} 반감기)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateChartHighlight() {
-            if (!decayChart) return;
-            const parentPct = (atoms.filter(a => a.isParent).length / totalAtoms) * 100;
-            decayChart.data.datasets[2].data = [{ x: currentHalfLivesPassed, y: parentPct }];
-            decayChart.update('none');
-        }
-
-        function initCalcChart() {
-            const ctxCalc = document.getElementById('calc-decay-chart').getContext('2d');
-
-            const points = 100;
-            const parentData = [];
-            const daughterData = [];
-
-            for (let i = 0; i <= points; i++) {
-                const hl = (i / points) * 5;
-                const parentRatio = Math.pow(0.5, hl) * 100;
-                parentData.push({ x: hl, y: parentRatio });
-                daughterData.push({ x: hl, y: 100 - parentRatio });
-            }
-
-            calcChart = new Chart(ctxCalc, {
-                type: 'line',
-                data: {
-                    datasets: [
-                        {
-                            label: '모원소 (%)',
-                            data: parentData,
-                            borderColor: '#ef4444',
-                            borderWidth: 2,
-                            pointRadius: 0
-                        },
-                        {
-                            label: '자원소 (%)',
-                            data: daughterData,
-                            borderColor: '#3b82f6',
-                            borderWidth: 2,
-                            pointRadius: 0
-                        },
-                        {
-                            label: '측정 위치',
-                            data: [{ x: 2, y: 25 }],
-                            borderColor: '#10b981',
-                            backgroundColor: '#10b981',
-                            pointRadius: 8,
-                            showLine: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            min: 0,
-                            max: 5,
-                            title: { display: true, text: '반감기 횟수 (n)', color: '#94a3b8' },
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: '#334155' }
-                        },
-                        y: {
-                            min: 0,
-                            max: 100,
-                            title: { display: true, text: '비율 (%)', color: '#94a3b8' },
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: '#334155' }
-                        }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-
-        function updateCalcResults() {
-            const isoKey = document.getElementById('calc-isotope-select').value;
-            const iso = ISOTOPES[isoKey];
-
-            const parentPct = parseFloat(document.getElementById('calc-parent-slider').value);
-            const daughterPct = 100 - parentPct;
-            const ratio = daughterPct / parentPct;
-
-            document.getElementById('calc-parent-pct-label').innerText = parentPct.toFixed(1) + " %";
-            document.getElementById('calc-daughter-pct-label').innerText = daughterPct.toFixed(1) + " %";
-            document.getElementById('calc-ratio-label').innerText = `1 : ${ratio.toFixed(2)}`;
-
-            // Formula: n = -log2(N / N0) = log2(100 / parentPct)
-            const hlPassed = Math.log2(100 / parentPct);
-            const totalAgeYears = hlPassed * iso.halfLifeYears;
-
-            // Formatted age
-            let ageString = "";
-            if (iso.unit === '억 년') {
-                const eok = totalAgeYears / 1e8;
-                ageString = eok.toFixed(2) + "억 년";
-            } else {
-                ageString = Math.round(totalAgeYears).toLocaleString('ko-KR') + " 년";
-            }
-
-            document.getElementById('calc-result-age').innerText = ageString;
-            document.getElementById('calc-result-hl').innerText = `(${hlPassed.toFixed(2)} 반감기 경과)`;
-
-            // Geological era estimation text
-            let eraText = "";
-            if (isoKey === 'C14') {
-                eraText = `신생대 4기 유적/유물 연령 측정 가능 (약 ${(totalAgeYears).toLocaleString()}년 전)`;
-            } else {
-                const eok = totalAgeYears / 1e8;
-                if (eok >= 45) eraText = "지구 형성 초기의 최고령 암석 시대";
-                else if (eok >= 5.41) eraText = "선캄브리아 시대 (암석 생성)";
-                else if (eok >= 2.52) eraText = "고생대 화성암/변성암";
-                else if (eok >= 0.66) eraText = "중생대 화성암 (공룡 시대)";
-                else eraText = "신생대 화성암";
-            }
-            document.getElementById('calc-geology-era').innerText = `지질 시대 및 특성: ${eraText}`;
-
-            // Math step updates
-            document.getElementById('math-step-1').innerText = `${(parentPct/100).toFixed(3)} (${parentPct.toFixed(1)}%)`;
-            document.getElementById('math-step-2').innerText = `${hlPassed.toFixed(2)} 회`;
-            
-            let hlText = (iso.halfLifeYears >= 1e8) ? (iso.halfLifeYears / 1e8) + '억 년' : iso.halfLifeYears.toLocaleString() + '년';
-            document.getElementById('math-step-3').innerText = hlText;
-            document.getElementById('math-step-4').innerText = ageString;
-
-            // Update calc chart dot
-            if (calcChart) {
-                calcChart.data.datasets[2].data = [{ x: hlPassed, y: parentPct }];
-                calcChart.update('none');
-            }
-        }
-
-        function setCalcPreset(parentPct) {
-            document.getElementById('calc-parent-slider').value = parentPct;
-            updateCalcResults();
-        }
-
-        function setCalcRandomPreset() {
-            const randomVal = (Math.random() * 80 + 5).toFixed(1); // 5% to 85%
-            document.getElementById('calc-parent-slider').value = randomVal;
-            updateCalcResults();
-        }
-
-        const QUIZ_BANK = [
-            {
-                isotope: 'C14',
-                parentPct: 12.5,
-                question: '어느 고고학 유적지에서 발굴된 목조 유물 속 탄소-14(C-14, 반감기 5,730년)의 비율을 조사한 결과, 초기 양의 12.5%만 남아있었습니다. 이 유물의 절대 연령은 약 얼마입니까?',
-                calcHL: 3,
-                correctAnswerYears: 17190,
-                explanation: '모원소가 12.5% 남아있으므로 (1/2)^3 = 12.5%에 해당하여 반감기가 3회 경과하였습니다. 따라서 5,730년 × 3 = 17,190년입니다.'
-            },
-            {
-                isotope: 'U235',
-                parentPct: 25,
-                question: '한 화성암 암석에 포함된 우라늄-235(U-235, 반감기 7억 년)와 자원소 납-207(Pb-207)의 개수 비율이 1 : 3 이었습니다. 이 암석의 생성 연령은 몇 년일까요?',
-                calcHL: 2,
-                correctAnswerYears: 1400000000,
-                explanation: '모원소 : 자원소 비율이 1 : 3 이라는 것은 전체 원자 중 모원소가 25% 남아있음을 의미합니다. 25%는 2반감기가 지난 상태이므로 7억 년 × 2 = 14억 년입니다.'
-            },
-            {
-                isotope: 'K40',
-                parentPct: 50,
-                question: '화강암 샘플 분석 결과 칼륨-40(K-40, 반감기 12.5억 년)과 아르곤-40(Ar-40)의 비율이 1 : 1로 나타났습니다. 이 화강암의 절대 연령은 얼마인가요?',
-                calcHL: 1,
-                correctAnswerYears: 1250000000,
-                explanation: '비율이 1 : 1 이면 모원소가 정확히 50% 남아있는 상태입니다. 이는 1반감기가 경과했음을 뜻하므로 연령은 12.5억 년입니다.'
-            },
-            {
-                isotope: 'U238',
-                parentPct: 6.25,
-                question: '어느 운석에 들어있는 우라늄-238(U-238, 반감기 45억 년)의 양이 처음의 6.25%로 줄어들어 있었습니다. 운석의 나이는 얼마입니까?',
-                calcHL: 4,
-                correctAnswerYears: 18000000000,
-                explanation: '6.25%는 (1/2)^4 에 해당하므로 4반감기가 흘렀습니다. 따라서 45억 년 × 4 = 180억 년입니다.'
-            }
-        ];
-
-        let currentQuizIndex = 0;
-
-        function generateNewQuiz() {
-            currentQuizIndex = Math.floor(Math.random() * QUIZ_BANK.length);
-            const quiz = QUIZ_BANK[currentQuizIndex];
-
-            document.getElementById('quiz-isotope-info').innerText = `동위원소: ${ISOTOPES[quiz.isotope].name}`;
-            document.getElementById('quiz-question-text').innerText = quiz.question;
-
-            // Generate options
-            const correctYears = quiz.correctAnswerYears;
-            const isEok = correctYears >= 1e8;
-
-            let formatAge = (y) => isEok ? (y / 1e8) + "억 년" : y.toLocaleString() + "년";
-
-            const options = [
-                correctYears,
-                correctYears * 0.5,
-                correctYears * 1.5,
-                correctYears * 2
-            ].sort(() => Math.random() - 0.5);
-
-            const container = document.getElementById('quiz-options-container');
-            container.innerHTML = '';
-
-            const expBox = document.getElementById('quiz-explanation-box');
-            expBox.className = "hidden p-4 rounded-xl text-xs space-y-2 border";
-
-            options.forEach((optVal, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "p-3 bg-slate-900 border border-slate-700 hover:border-amber-500 hover:bg-slate-800 text-left rounded-xl transition text-slate-200 font-mono text-xs flex items-center justify-between";
-                btn.innerHTML = `<span><strong>(${['A', 'B', 'C', 'D'][idx]})</strong> ${formatAge(optVal)}</span> <i class="fa-regular fa-circle text-slate-500"></i>`;
-                btn.onclick = () => checkAnswer(optVal, correctYears, btn);
-                container.appendChild(btn);
-            });
-        }
-
-        function checkAnswer(selectedVal, correctVal, btn) {
-            const expBox = document.getElementById('quiz-explanation-box');
-            const quiz = QUIZ_BANK[currentQuizIndex];
-
-            expBox.classList.remove('hidden');
-
-            if (selectedVal === correctVal) {
-                btn.className = "p-3 bg-emerald-950/80 border-2 border-emerald-500 text-left rounded-xl text-emerald-200 font-mono text-xs flex items-center justify-between";
-                btn.querySelector('i').className = "fa-solid fa-circle-check text-emerald-400 text-base";
-
-                expBox.className = "p-4 rounded-xl text-xs space-y-1 border bg-emerald-950/40 border-emerald-800/60 text-emerald-200";
-                expBox.innerHTML = `
-                    <div class="font-bold flex items-center space-x-1 text-emerald-400">
-                        <i class="fa-solid fa-circle-check"></i> <span>정답입니다!</span>
-                    </div>
-                    <p class="leading-relaxed mt-1">${quiz.explanation}</p>
-                `;
-            } else {
-                btn.className = "p-3 bg-red-950/80 border-2 border-red-500 text-left rounded-xl text-red-200 font-mono text-xs flex items-center justify-between";
-                btn.querySelector('i').className = "fa-solid fa-circle-xmark text-red-400 text-base";
-
-                expBox.className = "p-4 rounded-xl text-xs space-y-1 border bg-red-950/40 border-red-800/60 text-red-200";
-                expBox.innerHTML = `
-                    <div class="font-bold flex items-center space-x-1 text-red-400">
-                        <i class="fa-solid fa-circle-xmark"></i> <span>오답입니다. 다시 한번 계산해보세요!</span>
-                    </div>
-                    <p class="leading-relaxed mt-1">${quiz.explanation}</p>
-                `;
-            }
-        }
-    </script>
-</body>
-</html>
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.
