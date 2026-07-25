@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방사성 동위원소 반감기 및 절대연령 학습 시뮬레이터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .glow-parent {
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+        }
+        .glow-daughter {
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid font-bold fa-atom text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-100 leading-tight">방사성 동위원소 반감기 시뮬레이터</h1>
+                    <p class="text-xs text-slate-400">암석의 절대 연령 측정 원리 탐구</p>
+                </div>
+            </div>
+
+            <!-- Tab Navigation Buttons -->
+            <nav class="flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-sm font-medium">
+                <button id="tab-sim-btn" onclick="switchTab('sim')" class="px-4 py-1.5 rounded-lg text-amber-400 bg-slate-800 shadow transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-flask"></i>
+                    <span class="hidden sm:inline">붕괴 시뮬레이션</span>
+                </button>
+                <button id="tab-calc-btn" onclick="switchTab('calc')" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-mountain text-emerald-400"></i>
+                    <span class="hidden sm:inline">암석 절대연령 측정</span>
+                </button>
+                <button id="tab-quiz-btn" onclick="switchTab('quiz')" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-graduation-cap text-indigo-400"></i>
+                    <span class="hidden sm:inline">개념 & 퀴즈</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+        <!-- SECTION 1: DECAY SIMULATION TAB -->
+        <section id="section-sim" class="space-y-6">
+            <!-- Control Bar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                
+                <!-- Isotope Selector -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                        <i class="fa-solid fa-atom text-amber-400 mr-1"></i> 방사성 동위원소 선택
+                    </label>
+                    <select id="isotope-select" onchange="onIsotopeChange()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-slate-200">
+                        <option value="C14" selected>탄소-14 (C-14 → N-14, 반감기: 5,730년)</option>
+                        <option value="U235">우라늄-235 (U-235 → Pb-207, 반감기: 7억 년)</option>
+                        <option value="U238">우라늄-238 (U-238 → Pb-206, 반감기: 45억 년)</option>
+                        <option value="K40">칼륨-40 (K-40 → Ar-40, 반감기: 12.5억 년)</option>
+                        <option value="Rb87">루비듐-87 (Rb-87 → Sr-87, 반감기: 488억 년)</option>
+                        <option value="CUSTOM">커스텀 (사용자 지정 반감기)</option>
+                    </select>
+                </div>
+
+                <!-- Particle Count & Mode -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                            시작 모원소 수
+                        </label>
+                        <select id="particle-count-select" onchange="resetSimulation()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-medium outline-none text-slate-200">
+                            <option value="100" selected>100 개 (10x10)</option>
+                            <option value="400">400 개 (20x20)</option>
+                            <option value="900">900 개 (30x30)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                            시뮬레이션 방식
+                        </label>
+                        <select id="decay-mode-select" onchange="resetSimulation()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-medium outline-none text-slate-200">
+                            <option value="probabilistic" selected>확률적 붕괴 (실제 자연)</option>
+                            <option value="exact">정확한 수학적 비율</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Playback Controls -->
+                <div class="flex flex-col space-y-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">시간 제어</span>
+                    <div class="flex items-center space-x-2">
+                        <button id="btn-play" onclick="togglePlay()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2">
+                            <i id="play-icon" class="fa-solid fa-play"></i>
+                            <span id="play-text">시작</span>
+                        </button>
+                        <button onclick="stepHalfLife(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 px-3 rounded-xl border border-slate-700 transition-all text-xs" title="1 반감기 진행">
+                            +1 반감기
+                        </button>
+                        <button onclick="resetSimulation()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 px-3 rounded-xl border border-slate-700 transition-all" title="초기화">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Custom Half Life Input (Hidden by default) -->
+            <div id="custom-half-life-box" class="hidden bg-slate-900 border border-amber-500/40 rounded-2xl p-4 flex items-center space-x-4">
+                <i class="fa-solid fa-sliders text-amber-400 text-lg"></i>
+                <div class="flex-1 flex items-center space-x-3">
+                    <label class="text-xs font-medium text-slate-300">커스텀 반감기 입력 (년):</label>
+                    <input type="number" id="custom-half-life-input" value="1000" min="1" onchange="onCustomHalfLifeChange()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1 text-sm text-amber-400 font-mono w-40">
+                </div>
+            </div>
+
+            <!-- Dashboard Grid: Atom Visualizer & Chart Graph -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Atom Grid Canvas Box (5 columns) -->
+                <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col items-center justify-between shadow-xl">
+                    <div class="w-full flex items-center justify-between mb-3">
+                        <h2 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                            <i class="fa-solid fa-grip text-amber-400"></i>
+                            <span>원자 변환 실시간 시각화</span>
+                        </h2>
+                        <span id="time-display" class="text-xs font-mono px-2.5 py-1 bg-slate-950 text-amber-400 border border-slate-800 rounded-lg font-semibold">
+                            0 년 (0.0 반감기)
+                        </span>
+                    </div>
+
+                    <!-- Canvas -->
+                    <div class="relative w-full aspect-square max-w-[360px] my-auto bg-slate-950 rounded-2xl border border-slate-800 p-3 flex items-center justify-center">
+                        <canvas id="atom-canvas" class="w-full h-full rounded-xl"></canvas>
+                    </div>
+
+                    <!-- Legend & Status Footer -->
+                    <div class="w-full mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-red-950/40 border border-red-800/40 p-2.5 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-red-500 inline-block glow-parent"></span>
+                                <span class="font-medium text-red-200">모원소 (<span id="parent-name">C-14</span>)</span>
+                            </div>
+                            <span id="parent-count-text" class="font-bold font-mono text-red-400">100 (100%)</span>
+                        </div>
+                        <div class="bg-blue-950/40 border border-blue-800/40 p-2.5 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-blue-500 inline-block glow-daughter"></span>
+                                <span class="font-medium text-blue-200">자원소 (<span id="daughter-name">N-14</span>)</span>
+                            </div>
+                            <span id="daughter-count-text" class="font-bold font-mono text-blue-400">0 (0%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decay Curve Chart Box (7 columns) -->
+                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-line text-amber-400"></i>
+                            <span>방사성 붕괴 곡선 그래프</span>
+                        </h2>
+                        <div class="flex items-center space-x-4 text-xs font-medium">
+                            <span class="flex items-center text-red-400">
+                                <span class="w-2.5 h-0.5 bg-red-500 mr-1.5"></span> 모원소 비율 (%)
+                            </span>
+                            <span class="flex items-center text-blue-400">
+                                <span class="w-2.5 h-0.5 bg-blue-500 mr-1.5"></span> 자원소 비율 (%)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="relative w-full h-[320px]">
+                        <canvas id="decay-chart"></canvas>
+                    </div>
+
+                    <!-- Timeline Scrubbing Slider -->
+                    <div class="mt-4 pt-3 border-t border-slate-800 flex items-center space-x-4">
+                        <span class="text-xs font-medium text-slate-400 whitespace-nowrap">반감기 조절:</span>
+                        <input id="half-life-slider" type="range" min="0" max="6" step="0.05" value="0" oninput="onSliderInput(this.value)" class="w-full accent-amber-500 cursor-pointer">
+                        <span id="slider-val-text" class="text-xs font-mono text-amber-400 font-bold min-w-[50px] text-right">0.0회</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Key Ratios Quick Reference Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                    <p class="text-xs text-slate-400 font-medium">1 반감기 지나면 (t = T)</p>
+                    <p class="text-lg font-bold text-amber-400 font-mono mt-1">1 : 1</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">모원소 50% | 자원소 50%</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                    <p class="text-xs text-slate-400 font-medium">2 반감기 지나면 (t = 2T)</p>
+                    <p class="text-lg font-bold text-amber-400 font-mono mt-1">1 : 3</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">모원소 25% | 자원소 75%</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                    <p class="text-xs text-slate-400 font-medium">3 반감기 지나면 (t = 3T)</p>
+                    <p class="text-lg font-bold text-amber-400 font-mono mt-1">1 : 7</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">모원소 12.5% | 자원소 87.5%</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                    <p class="text-xs text-slate-400 font-medium">4 반감기 지나면 (t = 4T)</p>
+                    <p class="text-lg font-bold text-amber-400 font-mono mt-1">1 : 15</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">모원소 6.25% | 자원소 93.75%</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 2: ROCK AGE DATING CALCULATOR TAB -->
+        <section id="section-calc" class="space-y-6 hidden">
+            <div class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-800/40 rounded-2xl p-6 shadow-xl">
+                <div class="max-w-3xl">
+                    <h2 class="text-xl font-bold text-emerald-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-gem"></i>
+                        <span>암석 샘플 질량분석기 및 절대연령 판독기</span>
+                    </h2>
+                    <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                        화성암이 정출될 때 모원소만 포함되고 자원소는 없었다고 가정하면, 
+                        현재 암석에 남아 있는 모원소와 자원소의 함량 비율을 측정하여 암석의 형성 시기(절대 연령)를 정확히 계산할 수 있습니다.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Interactive Controls & Sample Creation -->
+                <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+                    
+                    <!-- Isotope Selection for Rocks -->
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                            사용할 방사성 동위원소 계통
+                        </label>
+                        <select id="calc-isotope-select" onchange="updateCalcResults()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="U238" selected>우라늄-238 (반감기: 45억 년)</option>
+                            <option value="K40">칼륨-40 (반감기: 12.5억 년)</option>
+                            <option value="U235">우라늄-235 (반감기: 7억 년)</option>
+                            <option value="C14">탄소-14 (반감기: 5,730년)</option>
+                            <option value="Rb87">루비듐-87 (반감기: 488억 년)</option>
+                        </select>
+                    </div>
+
+                    <!-- Ratio Slider -->
+                    <div class="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-semibold text-slate-300">현재 암석 내 모원소 비율</span>
+                            <span id="calc-parent-pct-label" class="font-mono text-red-400 font-bold text-sm">25.0 %</span>
+                        </div>
+                        <input id="calc-parent-slider" type="range" min="1" max="99" step="0.5" value="25" oninput="updateCalcResults()" class="w-full accent-emerald-500 cursor-pointer">
+                        
+                        <div class="flex justify-between text-xs font-mono pt-1 text-slate-400">
+                            <span>자원소: <strong id="calc-daughter-pct-label" class="text-blue-400">75.0 %</strong></span>
+                            <span>비율 (모:자): <strong id="calc-ratio-label" class="text-amber-400">1 : 3.00</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Preset Rock Generator Buttons -->
+                    <div>
+                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">가상 탐사 암석 샘플 선택</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setCalcPreset(50)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 py-2 px-3 rounded-lg border border-slate-700 transition">
+                                샘플 A (1반감기, 모 50%)
+                            </button>
+                            <button onclick="setCalcPreset(25)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 py-2 px-3 rounded-lg border border-slate-700 transition">
+                                샘플 B (2반감기, 모 25%)
+                            </button>
+                            <button onclick="setCalcPreset(12.5)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 py-2 px-3 rounded-lg border border-slate-700 transition">
+                                샘플 C (3반감기, 모 12.5%)
+                            </button>
+                            <button onclick="setCalcRandomPreset()" class="bg-emerald-950/60 hover:bg-emerald-900/60 text-xs text-emerald-300 border border-emerald-700/50 py-2 px-3 rounded-lg transition font-medium">
+                                <i class="fa-solid fa-dice mr-1"></i> 랜덤 비율 암석 채취
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Calculated Result Box -->
+                    <div class="bg-slate-950 border border-emerald-500/40 p-5 rounded-2xl space-y-3">
+                        <div class="text-xs text-slate-400 font-medium uppercase tracking-wider">추정 계산된 암석의 절대 연령</div>
+                        <div class="flex items-baseline space-x-2">
+                            <span id="calc-result-age" class="text-3xl font-extrabold text-emerald-400 font-mono">90.00억 년</span>
+                            <span id="calc-result-hl" class="text-xs text-slate-400 font-mono">(2.00 반감기 경과)</span>
+                        </div>
+                        <p id="calc-geology-era" class="text-xs text-slate-300 border-t border-slate-800 pt-2.5">
+                            지질 시대: 선캄브리아 시대 (약 90억 년 전 생성)
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- Graphic & Calculation Visualizer -->
+                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-200 mb-2 flex items-center space-x-2">
+                            <i class="fa-solid fa-square-root-variable text-emerald-400"></i>
+                            <span>수학적 계산 과정 및 그래프 교점 분석</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">
+                            $N(t) = N_0 \cdot \left(\frac{1}{2}\right)^{\frac{t}{T}}$ 식을 이용하여 반감기 횟수 $n$과 실제 나이 $t$를 산출합니다.
+                        </p>
+                    </div>
+
+                    <!-- Math Steps Box -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs space-y-2 text-slate-300">
+                        <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-slate-400">1. 모원소 잔존 비율 N(t)/N0:</span>
+                            <span id="math-step-1" class="text-amber-400 font-bold">0.25 (25%)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-slate-400">2. 경과한 반감기 횟수 n = -log2(N/N0):</span>
+                            <span id="math-step-2" class="text-amber-400 font-bold">2.00 회</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-slate-400">3. 대상 동위원소 반감기 T:</span>
+                            <span id="math-step-3" class="text-emerald-400 font-bold">45억 년</span>
+                        </div>
+                        <div class="flex justify-between pt-1">
+                            <span class="text-slate-200 font-bold">4. 암석의 절대 연령 t = n × T:</span>
+                            <span id="math-step-4" class="text-emerald-400 font-extrabold text-sm">90.00억 년</span>
+                        </div>
+                    </div>
+
+                    <!-- Graph visualization container for calc mode -->
+                    <div class="relative w-full h-[220px] mt-4">
+                        <canvas id="calc-decay-chart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- SECTION 3: CONCEPT & INTERACTIVE QUIZ TAB -->
+        <section id="section-quiz" class="space-y-6 hidden">
+            
+            <!-- Educational Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold">
+                        <i class="fa-solid fa-atom"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-100">모원소와 자원소란?</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        불안정한 방사성 동위원소를 <strong class="text-red-400">모원소(Parent Isotope)</strong>라 하고, 
+                        방사성 붕괴를 일으켜 새롭게 생성되는 안정한 원소를 <strong class="text-blue-400">자원소(Daughter Isotope)</strong>라고 합니다.
+                    </p>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-100">반감기(Half-Life)의 특징</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        모원소 전체 원자 수의 절반(50%)이 자원소로 변하는 데 걸리는 시간입니다. 
+                        온도나 압력 등 주변 환경 조건에 상관없이 항상 일정한 값을 유지합니다.
+                    </p>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-100">절대 연령 측정의 가정</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        암석이 생성될 당시 자원소는 0%였으며, 생성 이후 외부 물질의 유입이나 유출이 없는 <strong class="text-indigo-300">폐쇄계(Closed System)</strong>를 유지해야 올바른 연령 측정이 가능합니다.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quiz Interactive Widget -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-indigo-400 flex items-center space-x-2">
+                            <i class="fa-solid fa-clipboard-question"></i>
+                            <span>개념 확인 평가 퀴즈</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">학습한 지질학적 절대 연령 계산 원리를 바탕으로 문제를 풀어보세요.</p>
+                    </div>
+                    <button onclick="generateNewQuiz()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-xl transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>새 문제 풀기</span>
+                    </button>
+                </div>
+
+                <!-- Quiz Card Container -->
+                <div id="quiz-card" class="bg-slate-950 border border-slate-800 p-6 rounded-2xl space-y-5">
+                    <div class="flex items-center space-x-2">
+                        <span id="quiz-badge" class="px-2.5 py-1 bg-indigo-950 text-indigo-300 border border-indigo-800 text-xs rounded-md font-mono font-bold">
+                            문제 1
+                        </span>
+                        <span id="quiz-isotope-info" class="text-xs text-slate-400 font-medium">동위원소: 탄소-14 (반감기 5,730년)</span>
+                    </div>
+
+                    <p id="quiz-question-text" class="text-sm font-semibold text-slate-100 leading-relaxed">
+                        어느 고고학 유적지에서 발굴된 목조 유물 속 탄소-14(C-14)의 비율을 조사한 결과, 처음 양의 12.5%만 남아있었습니다. 이 유물의 절대 연령은 얼마일까요?
+                    </p>
+
+                    <!-- Multiple choice options -->
+                    <div id="quiz-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Explanation Modal/Box -->
+                    <div id="quiz-explanation-box" class="hidden p-4 rounded-xl text-xs space-y-2 border">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            방사성 동위원소 반감기 시뮬레이션 인터랙티브 시각화 도구 | 과학 교육용 응용 프로그램
+        </div>
+    </footer>
+
+    <script>
+        // Isotope Preset Database
+        const ISOTOPES = {
+            C14: { name: '탄소-14', daughter: '질소-14', halfLifeYears: 5730, unit: '년', code: 'C-14 → N-14' },
+            U235: { name: '우라늄-235', daughter: '납-207', halfLifeYears: 700000000, unit: '억 년', code: 'U-235 → Pb-207' },
+            U238: { name: '우라늄-238', daughter: '납-206', halfLifeYears: 4500000000, unit: '억 년', code: 'U-238 → Pb-206' },
+            K40: { name: '칼륨-40', daughter: '아르곤-40', halfLifeYears: 1250000000, unit: '억 년', code: 'K-40 → Ar-40' },
+            Rb87: { name: '루비듐-87', daughter: '스트론튬-87', halfLifeYears: 48800000000, unit: '억 년', code: 'Rb-87 → Sr-87' },
+            CUSTOM: { name: '커스텀 원소', daughter: '자원소', halfLifeYears: 1000, unit: '년', code: 'Parent → Daughter' }
+        };
+
+        // State variables
+        let currentIsotopeKey = 'C14';
+        let currentHalfLifeYears = ISOTOPES.C14.halfLifeYears;
+        let totalAtoms = 100;
+        let atoms = []; // array of objects: { isParent: boolean }
+        let currentHalfLivesPassed = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let decayMode = 'probabilistic'; // 'probabilistic' or 'exact'
+
+        // Chart.js instances
+        let decayChart = null;
+        let calcChart = null;
+
+        // Canvas context
+        let canvas = null;
+        let ctx = null;
+
+        window.onload = function() {
+            canvas = document.getElementById('atom-canvas');
+            ctx = canvas.getContext('2d');
+
+            // Initialize simulation data before rendering canvas
+            resetSimulation();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            initDecayChart();
+            initCalcChart();
+            updateCalcResults();
+            generateNewQuiz();
+        };
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth * window.devicePixelRatio || 300;
+            canvas.height = parent.clientHeight * window.devicePixelRatio || 300;
+            drawAtoms();
+        }
+
+        function switchTab(tab) {
+            document.getElementById('section-sim').classList.add('hidden');
+            document.getElementById('section-calc').classList.add('hidden');
+            document.getElementById('section-quiz').classList.add('hidden');
+
+            document.getElementById('tab-sim-btn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2";
+            document.getElementById('tab-calc-btn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2";
+            document.getElementById('tab-quiz-btn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2";
+
+            if (tab === 'sim') {
+                document.getElementById('section-sim').classList.remove('hidden');
+                document.getElementById('tab-sim-btn').className = "px-4 py-1.5 rounded-lg text-amber-400 bg-slate-800 shadow transition-all flex items-center space-x-2 font-bold";
+                resizeCanvas();
+            } else if (tab === 'calc') {
+                document.getElementById('section-calc').classList.remove('hidden');
+                document.getElementById('tab-calc-btn').className = "px-4 py-1.5 rounded-lg text-emerald-400 bg-slate-800 shadow transition-all flex items-center space-x-2 font-bold";
+                if (calcChart) calcChart.update();
+            } else if (tab === 'quiz') {
+                document.getElementById('section-quiz').classList.remove('hidden');
+                document.getElementById('tab-quiz-btn').className = "px-4 py-1.5 rounded-lg text-indigo-400 bg-slate-800 shadow transition-all flex items-center space-x-2 font-bold";
+            }
+        }
+
+        function onIsotopeChange() {
+            const select = document.getElementById('isotope-select');
+            currentIsotopeKey = select.value;
+
+            const customBox = document.getElementById('custom-half-life-box');
+            if (currentIsotopeKey === 'CUSTOM') {
+                customBox.classList.remove('hidden');
+                currentHalfLifeYears = parseFloat(document.getElementById('custom-half-life-input').value) || 1000;
+            } else {
+                customBox.classList.add('hidden');
+                currentHalfLifeYears = ISOTOPES[currentIsotopeKey].halfLifeYears;
+            }
+
+            const iso = ISOTOPES[currentIsotopeKey];
+            document.getElementById('parent-name').innerText = iso.name;
+            document.getElementById('daughter-name').innerText = iso.daughter;
+
+            resetSimulation();
+        }
+
+        function onCustomHalfLifeChange() {
+            currentHalfLifeYears = parseFloat(document.getElementById('custom-half-life-input').value) || 1000;
+            resetSimulation();
+        }
+
+        function resetSimulation() {
+            stopPlay();
+            totalAtoms = parseInt(document.getElementById('particle-count-select').value);
+            decayMode = document.getElementById('decay-mode-select').value;
+            currentHalfLivesPassed = 0;
+
+            document.getElementById('half-life-slider').value = 0;
+            document.getElementById('slider-val-text').innerText = "0.0회";
+
+            // Initialize all atoms as parent
+            atoms = [];
+            for (let i = 0; i < totalAtoms; i++) {
+                atoms.push({ isParent: true });
+            }
+
+            updateDisplays();
+            drawAtoms();
+            updateChartHighlight();
+        }
+
+        function drawAtoms() {
+            // Ensure canvas, context, and atoms array are initialized
+            if (!ctx || !canvas || !atoms || atoms.length < totalAtoms) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const gridDim = Math.sqrt(totalAtoms);
+            const padding = width * 0.08;
+            const availableSize = width - padding * 2;
+            const cellSize = availableSize / gridDim;
+            const radius = Math.max(2, cellSize * 0.36);
+
+            for (let i = 0; i < totalAtoms; i++) {
+                const row = Math.floor(i / gridDim);
+                const col = i % gridDim;
+
+                const x = padding + col * cellSize + cellSize / 2;
+                const y = padding + row * cellSize + cellSize / 2;
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+                if (atoms[i].isParent) {
+                    ctx.fillStyle = '#ef4444'; // Red
+                    ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
+                    ctx.shadowBlur = 4;
+                } else {
+                    ctx.fillStyle = '#3b82f6'; // Blue
+                    ctx.shadowColor = 'rgba(59, 130, 246, 0.6)';
+                    ctx.shadowBlur = 4;
+                }
+                ctx.fill();
+                ctx.shadowBlur = 0; // reset
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                stopPlay();
+            } else {
+                startPlay();
+            }
+        }
+
+        function startPlay() {
+            isPlaying = true;
+            document.getElementById('play-icon').className = "fa-solid fa-pause";
+            document.getElementById('play-text').innerText = "일시정지";
+
+            playInterval = setInterval(() => {
+                if (currentHalfLivesPassed >= 6.0) {
+                    stopPlay();
+                    return;
+                }
+                advanceTime(0.05);
+            }, 100);
+        }
+
+        function stopPlay() {
+            isPlaying = false;
+            if (playInterval) clearInterval(playInterval);
+            document.getElementById('play-icon').className = "fa-solid fa-play";
+            document.getElementById('play-text').innerText = "시작";
+        }
+
+        function stepHalfLife(amount) {
+            stopPlay();
+            advanceTime(amount);
+        }
+
+        function onSliderInput(val) {
+            stopPlay();
+            const targetHL = parseFloat(val);
+            currentHalfLivesPassed = targetHL;
+            applyHalfLivesState(currentHalfLivesPassed);
+        }
+
+        function advanceTime(deltaHL) {
+            currentHalfLivesPassed = Math.min(6.0, currentHalfLivesPassed + deltaHL);
+            document.getElementById('half-life-slider').value = currentHalfLivesPassed;
+            applyHalfLivesState(currentHalfLivesPassed);
+        }
+
+        function applyHalfLivesState(hl) {
+            document.getElementById('slider-val-text').innerText = hl.toFixed(1) + "회";
+
+            if (decayMode === 'exact') {
+                // Smooth exact mathematical ratio
+                const parentRatio = Math.pow(0.5, hl);
+                const targetParentCount = Math.round(totalAtoms * parentRatio);
+
+                for (let i = 0; i < totalAtoms; i++) {
+                    atoms[i].isParent = i < targetParentCount;
+                }
+            } else {
+                // Probabilistic model
+                // For a given jump or target, calculate remaining parents probabilistically
+                const pDecayPerStep = 1 - Math.pow(0.5, 0.05); 
+                const stepsNeeded = Math.round(hl / 0.05);
+
+                // Re-seed or simulate to current time
+                let parentCount = Math.round(totalAtoms * Math.pow(0.5, hl));
+                
+                // Shuffle array slightly for dynamic stochastic visual feel
+                let activeParents = atoms.filter(a => a.isParent).length;
+                
+                if (activeParents > parentCount) {
+                    let toTurn = activeParents - parentCount;
+                    for (let i = 0; i < totalAtoms && toTurn > 0; i++) {
+                        if (atoms[i].isParent && Math.random() < 0.3) {
+                            atoms[i].isParent = false;
+                            toTurn--;
+                        }
+                    }
+                    // catch remaining
+                    for (let i = 0; i < totalAtoms && toTurn > 0; i++) {
+                        if (atoms[i].isParent) {
+                            atoms[i].isParent = false;
+                            toTurn--;
+                        }
+                    }
+                } else if (activeParents < parentCount) {
+                    let toRestore = parentCount - activeParents;
+                    for (let i = 0; i < totalAtoms && toRestore > 0; i++) {
+                        if (!atoms[i].isParent) {
+                            atoms[i].isParent = true;
+                            toRestore--;
+                        }
+                    }
+                }
+            }
+
+            updateDisplays();
+            drawAtoms();
+            updateChartHighlight();
+        }
+
+        function updateDisplays() {
+            const parentCount = atoms.filter(a => a.isParent).length;
+            const daughterCount = totalAtoms - parentCount;
+
+            const parentPct = ((parentCount / totalAtoms) * 100).toFixed(1);
+            const daughterPct = ((daughterCount / totalAtoms) * 100).toFixed(1);
+
+            document.getElementById('parent-count-text').innerText = `${parentCount} (${parentPct}%)`;
+            document.getElementById('daughter-count-text').innerText = `${daughterCount} (${daughterPct}%)`;
+
+            // Formatting years nicely
+            const years = currentHalfLivesPassed * currentHalfLifeYears;
+            let formattedYears = "";
+            if (years >= 1e8) {
+                formattedYears = (years / 1e8).toFixed(2) + "억 년";
+            } else if (years >= 1e4) {
+                formattedYears = Math.round(years).toLocaleString('ko-KR') + " 년";
+            } else {
+                formattedYears = years.toFixed(0) + " 년";
+            }
+
+            document.getElementById('time-display').innerText = `${formattedYears} (${currentHalfLivesPassed.toFixed(1)} 반감기)`;
+        }
+
+        function initDecayChart() {
+            const ctxChart = document.getElementById('decay-chart').getContext('2d');
+
+            // Generate fine-grained points for smooth curve
+            const points = 100;
+            const parentData = [];
+            const daughterData = [];
+
+            for (let i = 0; i <= points; i++) {
+                const hl = (i / points) * 6;
+                const parentRatio = Math.pow(0.5, hl) * 100;
+                parentData.push({ x: hl, y: parentRatio });
+                daughterData.push({ x: hl, y: 100 - parentRatio });
+            }
+
+            decayChart = new Chart(ctxChart, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: '모원소 (%)',
+                            data: parentData,
+                            borderColor: '#ef4444',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            tension: 0.3
+                        },
+                        {
+                            label: '자원소 (%)',
+                            data: daughterData,
+                            borderColor: '#3b82f6',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            tension: 0.3
+                        },
+                        {
+                            label: '현재 지점',
+                            data: [{ x: 0, y: 100 }],
+                            borderColor: '#f59e0b',
+                            backgroundColor: '#f59e0b',
+                            pointRadius: 7,
+                            pointHoverRadius: 9,
+                            showLine: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: 0,
+                            max: 6,
+                            title: {
+                                display: true,
+                                text: '경과한 반감기 횟수 (회)',
+                                color: '#94a3b8',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                stepSize: 1,
+                                callback: function(val) { return val + 'T'; }
+                            },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '비율 (%)',
+                                color: '#94a3b8',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                stepSize: 25,
+                                callback: function(val) { return val + '%'; }
+                            },
+                            grid: { color: '#334155' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}% (${context.parsed.x.toFixed(2)} 반감기)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartHighlight() {
+            if (!decayChart) return;
+            const parentPct = (atoms.filter(a => a.isParent).length / totalAtoms) * 100;
+            decayChart.data.datasets[2].data = [{ x: currentHalfLivesPassed, y: parentPct }];
+            decayChart.update('none');
+        }
+
+        function initCalcChart() {
+            const ctxCalc = document.getElementById('calc-decay-chart').getContext('2d');
+
+            const points = 100;
+            const parentData = [];
+            const daughterData = [];
+
+            for (let i = 0; i <= points; i++) {
+                const hl = (i / points) * 5;
+                const parentRatio = Math.pow(0.5, hl) * 100;
+                parentData.push({ x: hl, y: parentRatio });
+                daughterData.push({ x: hl, y: 100 - parentRatio });
+            }
+
+            calcChart = new Chart(ctxCalc, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: '모원소 (%)',
+                            data: parentData,
+                            borderColor: '#ef4444',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '자원소 (%)',
+                            data: daughterData,
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '측정 위치',
+                            data: [{ x: 2, y: 25 }],
+                            borderColor: '#10b981',
+                            backgroundColor: '#10b981',
+                            pointRadius: 8,
+                            showLine: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: 0,
+                            max: 5,
+                            title: { display: true, text: '반감기 횟수 (n)', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            title: { display: true, text: '비율 (%)', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function updateCalcResults() {
+            const isoKey = document.getElementById('calc-isotope-select').value;
+            const iso = ISOTOPES[isoKey];
+
+            const parentPct = parseFloat(document.getElementById('calc-parent-slider').value);
+            const daughterPct = 100 - parentPct;
+            const ratio = daughterPct / parentPct;
+
+            document.getElementById('calc-parent-pct-label').innerText = parentPct.toFixed(1) + " %";
+            document.getElementById('calc-daughter-pct-label').innerText = daughterPct.toFixed(1) + " %";
+            document.getElementById('calc-ratio-label').innerText = `1 : ${ratio.toFixed(2)}`;
+
+            // Formula: n = -log2(N / N0) = log2(100 / parentPct)
+            const hlPassed = Math.log2(100 / parentPct);
+            const totalAgeYears = hlPassed * iso.halfLifeYears;
+
+            // Formatted age
+            let ageString = "";
+            if (iso.unit === '억 년') {
+                const eok = totalAgeYears / 1e8;
+                ageString = eok.toFixed(2) + "억 년";
+            } else {
+                ageString = Math.round(totalAgeYears).toLocaleString('ko-KR') + " 년";
+            }
+
+            document.getElementById('calc-result-age').innerText = ageString;
+            document.getElementById('calc-result-hl').innerText = `(${hlPassed.toFixed(2)} 반감기 경과)`;
+
+            // Geological era estimation text
+            let eraText = "";
+            if (isoKey === 'C14') {
+                eraText = `신생대 4기 유적/유물 연령 측정 가능 (약 ${(totalAgeYears).toLocaleString()}년 전)`;
+            } else {
+                const eok = totalAgeYears / 1e8;
+                if (eok >= 45) eraText = "지구 형성 초기의 최고령 암석 시대";
+                else if (eok >= 5.41) eraText = "선캄브리아 시대 (암석 생성)";
+                else if (eok >= 2.52) eraText = "고생대 화성암/변성암";
+                else if (eok >= 0.66) eraText = "중생대 화성암 (공룡 시대)";
+                else eraText = "신생대 화성암";
+            }
+            document.getElementById('calc-geology-era').innerText = `지질 시대 및 특성: ${eraText}`;
+
+            // Math step updates
+            document.getElementById('math-step-1').innerText = `${(parentPct/100).toFixed(3)} (${parentPct.toFixed(1)}%)`;
+            document.getElementById('math-step-2').innerText = `${hlPassed.toFixed(2)} 회`;
+            
+            let hlText = (iso.halfLifeYears >= 1e8) ? (iso.halfLifeYears / 1e8) + '억 년' : iso.halfLifeYears.toLocaleString() + '년';
+            document.getElementById('math-step-3').innerText = hlText;
+            document.getElementById('math-step-4').innerText = ageString;
+
+            // Update calc chart dot
+            if (calcChart) {
+                calcChart.data.datasets[2].data = [{ x: hlPassed, y: parentPct }];
+                calcChart.update('none');
+            }
+        }
+
+        function setCalcPreset(parentPct) {
+            document.getElementById('calc-parent-slider').value = parentPct;
+            updateCalcResults();
+        }
+
+        function setCalcRandomPreset() {
+            const randomVal = (Math.random() * 80 + 5).toFixed(1); // 5% to 85%
+            document.getElementById('calc-parent-slider').value = randomVal;
+            updateCalcResults();
+        }
+
+        const QUIZ_BANK = [
+            {
+                isotope: 'C14',
+                parentPct: 12.5,
+                question: '어느 고고학 유적지에서 발굴된 목조 유물 속 탄소-14(C-14, 반감기 5,730년)의 비율을 조사한 결과, 초기 양의 12.5%만 남아있었습니다. 이 유물의 절대 연령은 약 얼마입니까?',
+                calcHL: 3,
+                correctAnswerYears: 17190,
+                explanation: '모원소가 12.5% 남아있으므로 (1/2)^3 = 12.5%에 해당하여 반감기가 3회 경과하였습니다. 따라서 5,730년 × 3 = 17,190년입니다.'
+            },
+            {
+                isotope: 'U235',
+                parentPct: 25,
+                question: '한 화성암 암석에 포함된 우라늄-235(U-235, 반감기 7억 년)와 자원소 납-207(Pb-207)의 개수 비율이 1 : 3 이었습니다. 이 암석의 생성 연령은 몇 년일까요?',
+                calcHL: 2,
+                correctAnswerYears: 1400000000,
+                explanation: '모원소 : 자원소 비율이 1 : 3 이라는 것은 전체 원자 중 모원소가 25% 남아있음을 의미합니다. 25%는 2반감기가 지난 상태이므로 7억 년 × 2 = 14억 년입니다.'
+            },
+            {
+                isotope: 'K40',
+                parentPct: 50,
+                question: '화강암 샘플 분석 결과 칼륨-40(K-40, 반감기 12.5억 년)과 아르곤-40(Ar-40)의 비율이 1 : 1로 나타났습니다. 이 화강암의 절대 연령은 얼마인가요?',
+                calcHL: 1,
+                correctAnswerYears: 1250000000,
+                explanation: '비율이 1 : 1 이면 모원소가 정확히 50% 남아있는 상태입니다. 이는 1반감기가 경과했음을 뜻하므로 연령은 12.5억 년입니다.'
+            },
+            {
+                isotope: 'U238',
+                parentPct: 6.25,
+                question: '어느 운석에 들어있는 우라늄-238(U-238, 반감기 45억 년)의 양이 처음의 6.25%로 줄어들어 있었습니다. 운석의 나이는 얼마입니까?',
+                calcHL: 4,
+                correctAnswerYears: 18000000000,
+                explanation: '6.25%는 (1/2)^4 에 해당하므로 4반감기가 흘렀습니다. 따라서 45억 년 × 4 = 180억 년입니다.'
+            }
+        ];
+
+        let currentQuizIndex = 0;
+
+        function generateNewQuiz() {
+            currentQuizIndex = Math.floor(Math.random() * QUIZ_BANK.length);
+            const quiz = QUIZ_BANK[currentQuizIndex];
+
+            document.getElementById('quiz-isotope-info').innerText = `동위원소: ${ISOTOPES[quiz.isotope].name}`;
+            document.getElementById('quiz-question-text').innerText = quiz.question;
+
+            // Generate options
+            const correctYears = quiz.correctAnswerYears;
+            const isEok = correctYears >= 1e8;
+
+            let formatAge = (y) => isEok ? (y / 1e8) + "억 년" : y.toLocaleString() + "년";
+
+            const options = [
+                correctYears,
+                correctYears * 0.5,
+                correctYears * 1.5,
+                correctYears * 2
+            ].sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+
+            const expBox = document.getElementById('quiz-explanation-box');
+            expBox.className = "hidden p-4 rounded-xl text-xs space-y-2 border";
+
+            options.forEach((optVal, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "p-3 bg-slate-900 border border-slate-700 hover:border-amber-500 hover:bg-slate-800 text-left rounded-xl transition text-slate-200 font-mono text-xs flex items-center justify-between";
+                btn.innerHTML = `<span><strong>(${['A', 'B', 'C', 'D'][idx]})</strong> ${formatAge(optVal)}</span> <i class="fa-regular fa-circle text-slate-500"></i>`;
+                btn.onclick = () => checkAnswer(optVal, correctYears, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedVal, correctVal, btn) {
+            const expBox = document.getElementById('quiz-explanation-box');
+            const quiz = QUIZ_BANK[currentQuizIndex];
+
+            expBox.classList.remove('hidden');
+
+            if (selectedVal === correctVal) {
+                btn.className = "p-3 bg-emerald-950/80 border-2 border-emerald-500 text-left rounded-xl text-emerald-200 font-mono text-xs flex items-center justify-between";
+                btn.querySelector('i').className = "fa-solid fa-circle-check text-emerald-400 text-base";
+
+                expBox.className = "p-4 rounded-xl text-xs space-y-1 border bg-emerald-950/40 border-emerald-800/60 text-emerald-200";
+                expBox.innerHTML = `
+                    <div class="font-bold flex items-center space-x-1 text-emerald-400">
+                        <i class="fa-solid fa-circle-check"></i> <span>정답입니다!</span>
+                    </div>
+                    <p class="leading-relaxed mt-1">${quiz.explanation}</p>
+                `;
+            } else {
+                btn.className = "p-3 bg-red-950/80 border-2 border-red-500 text-left rounded-xl text-red-200 font-mono text-xs flex items-center justify-between";
+                btn.querySelector('i').className = "fa-solid fa-circle-xmark text-red-400 text-base";
+
+                expBox.className = "p-4 rounded-xl text-xs space-y-1 border bg-red-950/40 border-red-800/60 text-red-200";
+                expBox.innerHTML = `
+                    <div class="font-bold flex items-center space-x-1 text-red-400">
+                        <i class="fa-solid fa-circle-xmark"></i> <span>오답입니다. 다시 한번 계산해보세요!</span>
+                    </div>
+                    <p class="leading-relaxed mt-1">${quiz.explanation}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
