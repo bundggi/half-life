@@ -1,23 +1,51 @@
-<html>
-<body>
-<a href="student.html">This site goes to student</a>a>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수업 활동 포털</title>
+    <!-- 깔끔한 스타일을 위한 Tailwind CSS 불러오기 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
 
-    <p>
-<a href="teacher.html">This site goes to Teacher</a>a>
+    <div class="max-w-4xl w-full text-center space-y-8">
+        <!-- 타이틀 및 안내 문구 -->
+        <div class="space-y-2">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800">수업 활동 포털</h1>
+            <p class="text-slate-600 text-base md:text-lg">접속할 단계를 선택해 주세요.</p>
+        </div>
 
+        <!-- 학생 / 교사 선택 카드 영역 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            
+            <!-- 학생용 카드 -->
+            <a href="student.html" class="group bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-200 flex flex-col items-center">
+                <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-3xl mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">학생용 페이지</h2>
+                <p class="text-sm text-slate-500 mb-6">수업 활동에 참여하고 과제를 제출합니다.</p>
+                <span class="inline-flex items-center text-blue-600 font-semibold group-hover:translate-x-1 transition-transform">
+                    학생으로 입장하기 <i class="fa-solid fa-arrow-right ml-2"></i>
+                </span>
+            </a>
 
+            <!-- 교사용 카드 -->
+            <a href="teacher.html" class="group bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-200 flex flex-col items-center">
+                <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-3xl mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">교사용 페이지</h2>
+                <p class="text-sm text-slate-500 mb-6">수업을 관리하고 학생 활동을 확인합니다.</p>
+                <span class="inline-flex items-center text-emerald-600 font-semibold group-hover:translate-x-1 transition-transform">
+                    교사로 입장하기 <i class="fa-solid fa-arrow-right ml-2"></i>
+                </span>
+            </a>
 
-        
-    </p>
-    
+        </div>
+    </div>
 
-
-
-
-    
 </body>
-
-
-
-    
 </html>
